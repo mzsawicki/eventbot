@@ -15,7 +15,8 @@ from eventbot.domain.exceptions import (
     EventNotFound,
     EventInThePast,
     UserNotPermittedToDeleteEvent,
-    UserNotPermittedToSetReminderForEvent
+    UserNotPermittedToSetReminderForEvent,
+    ReminderInThePast
 )
 
 
@@ -29,14 +30,18 @@ class Calendar:
 
     def add_event(self, name: str, time: datetime, owner_handle: str,
                   clock: Clock, sequence_generator: EventSequenceGenerator,
-                  reminder_time: timedelta = None) -> str:
-        if time <= (current_time := clock.now()):
+                  reminder_delta: timedelta = None) -> str:
+        current_time = clock.now()
+        if time <= current_time:
             raise EventInThePast(current_time, time)
         event_code = create_code_for_event(name, sequence_generator)
         event: Event = Event(name, event_code, time, owner_handle)
         event.declare_yes(owner_handle)
-        if reminder_time is not None:
-            event.set_reminder(reminder_time)
+        if reminder_delta is not None:
+            requested_reminder_time = time - reminder_delta
+            if requested_reminder_time <= current_time:
+                raise ReminderInThePast(current_time, requested_reminder_time)
+            event.set_reminder(reminder_delta)
         self._events[str(event_code)] = event
         self._bump_version()
         return str(event_code)
@@ -94,20 +99,20 @@ class Event:
         self._code: EventCode = code
         self._time: datetime = time
         self._owner_handle: str = owner_handle
-        self._reminder: Optional[Reminder] = None
+        self._remind_at: Optional[datetime] = None
         self._declarations: List[Declaration] = []
 
     def set_reminder(self, remind_delta: timedelta) -> None:
-        self._reminder = Reminder(self._id, self._time - remind_delta)
+        self._remind_at = self._time - remind_delta
 
     def handle_notification(self, clock: Clock, notifier: Notifier) -> None:
         handles_to_notify = [declaration.user_handle for declaration in self._declarations if declaration.is_positive]
         if self._is_pending(clock):
             message = create_message_for_event_start_notification(self._name, str(self._code))
             notifier.notify(message, handles_to_notify)
-        else:
+        elif self._is_to_remind(clock):
             message = create_message_for_event_reminder_notification(self._name, str(self._code), self._time)
-            self._reminder.remind_if_pending(message, handles_to_notify, clock, notifier)
+            notifier.notify(message, handles_to_notify)
 
     def declare_yes(self, user_handle: str) -> None:
         self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.YES))
@@ -132,19 +137,7 @@ class Event:
     def _is_pending(self, clock: Clock) -> bool:
         return clock.now() >= self._time
 
-
-class Reminder:
-    def __init__(self, event_id: UUID, remind_at: datetime):
-        self._id = uuid4()
-        self._event_id = event_id
-        self._remind_at = remind_at
-
-    def remind_if_pending(self, message: str, user_handles: List[str],
-                          clock: Clock, notifier: Notifier) -> None:
-        if self._is_pending(clock):
-            notifier.notify(message, user_handles)
-
-    def _is_pending(self, clock: Clock) -> bool:
+    def _is_to_remind(self, clock: Clock) -> bool:
         return clock.now() >= self._remind_at
 
 
