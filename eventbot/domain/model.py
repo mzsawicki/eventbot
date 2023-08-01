@@ -25,6 +25,7 @@ class Calendar:
         self._guild_handle: str = guild_handle
         self._channel_handle: str = channel_handle
         self._events: Dict[str, Event] = {}
+        self._version = 0
 
     def add_event(self, name: str, time: datetime, owner_handle: str,
                   clock: Clock, sequence_generator: EventSequenceGenerator,
@@ -37,16 +38,16 @@ class Calendar:
         if reminder_time is not None:
             event.set_reminder(reminder_time)
         self._events[str(event_code)] = event
+        self._bump_version()
         return str(event_code)
 
     def delete_event(self, user_handle: str, event_code: str,) -> None:
         if event_code not in self._events:
             raise EventNotFound(event_code)
-
         event: Event = self._events[event_code]
         event.ensure_user_can_delete(user_handle)
-
         del self._events[event_code]
+        self._bump_version()
 
     def set_reminder_for_event(self, user_handle: str, event_code: str, remind_time: timedelta) -> None:
         if event_code not in self._events:
@@ -54,28 +55,36 @@ class Calendar:
         event: Event = self._events[event_code]
         event.ensure_user_can_set_reminder(user_handle)
         event.set_reminder(remind_time)
+        self._bump_version()
 
     def send_pending_notifications(self, clock: Clock, notifier: Notifier) -> None:
         for _, event in self._events.items():
             event.handle_notification(clock, notifier)
+        self._bump_version()
 
     def declare_yes_to_event(self, user_handle: str, event_code: str) -> None:
         if event_code not in self._events:
             raise EventNotFound(event_code)
         event: Event = self._events[event_code]
         event.declare_yes(user_handle)
+        self._bump_version()
 
     def declare_no_to_event(self, user_handle: str, event_code: str) -> None:
         if event_code not in self._events:
             raise EventNotFound(event_code)
         event: Event = self._events[event_code]
         event.declare_no(user_handle)
+        self._bump_version()
 
     def declare_maybe_to_event(self, user_handle: str, event_code: str) -> None:
         if event_code not in self._events:
             raise EventNotFound(event_code)
         event: Event = self._events[event_code]
         event.declare_maybe(user_handle)
+        self._bump_version()
+
+    def _bump_version(self) -> None:
+        self._version += 1
 
 
 class Event:
