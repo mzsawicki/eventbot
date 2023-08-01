@@ -1,9 +1,6 @@
-from .aggregates import Calendar
-from .services import EventCodeProvider
-from .ports import EventSequenceGenerator, Clock, EventReminderNotifier
+from .model import Calendar
+from .ports import Notifier, Clock, EventSequenceGenerator
 from .exceptions import (
-    UserNotFound,
-    UserForbiddenFromCreatingEvents,
     EventInThePast,
     EventNotFound,
     UserNotPermittedToDeleteEvent,
@@ -11,15 +8,12 @@ from .exceptions import (
 )
 
 __all__ = [
-    'Calendar',
-    'EventCodeProvider',
-    'EventSequenceGenerator',
-    'Clock',
-    'EventReminderNotifier',
-    'UserNotFound',
-    'UserForbiddenFromCreatingEvents',
     'EventInThePast',
     'EventNotFound',
     'UserNotPermittedToDeleteEvent',
-    'UserNotPermittedToSetReminderForEvent'
+    'UserNotPermittedToSetReminderForEvent',
+    'Calendar',
+    'Notifier',
+    'Clock',
+    'EventSequenceGenerator'
 ]

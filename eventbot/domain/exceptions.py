@@ -1,18 +1,6 @@
 from datetime import datetime
 
 
-class UserNotFound(Exception):
-    def __init__(self, user_handle: str):
-        super().__init__()
-        self.user_handle: str = user_handle
-
-
-class UserForbiddenFromCreatingEvents(Exception):
-    def __init__(self, user_handle: str):
-        super().__init__()
-        self.user_handle: str = user_handle
-
-
 class EventInThePast(Exception):
     def __init__(self, now: datetime, requested_time: datetime):
         super().__init__()

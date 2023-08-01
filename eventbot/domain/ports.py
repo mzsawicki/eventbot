@@ -1,11 +1,11 @@
 import abc
 from datetime import datetime
-from typing import Generator, List
+from typing import List, Generator
 
 
-class EventSequenceGenerator(metaclass=abc.ABCMeta):
+class Notifier(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __call__(self) -> Generator[int, None, None]:
+    def notify(self, message: str, user_handles: List[str]) -> None:
         raise NotImplemented
 
 
@@ -15,7 +15,7 @@ class Clock(metaclass=abc.ABCMeta):
         raise NotImplemented
 
 
-class EventReminderNotifier(metaclass=abc.ABCMeta):
+class EventSequenceGenerator(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def notify(self, event_name: str, event_time: datetime, user_handles: List[str]) -> None:
+    def __call__(self) -> Generator[int, None, None]:
         raise NotImplemented

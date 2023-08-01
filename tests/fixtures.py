@@ -2,26 +2,45 @@ from datetime import datetime
 
 import pytest
 
-from tests.fakes import FakeClock, FakeEventReminderNotifier, FakeSequenceGenerator
-from eventbot.domain import Calendar, EventCodeProvider
+from eventbot.domain import Calendar
+from eventbot.infrastructure.persistence import get_database_engine, get_session_factory, map_tables, build_dsn
+from eventbot.infrastructure.config import Config
+
+from tests.fakes import FakeClock, FakeNotifier, FakeSequenceGenerator
 
 
 @pytest.fixture
-def clock():
+def fake_clock():
     return FakeClock(datetime(1970, 1, 1))
 
 
 @pytest.fixture
-def notifier():
-    return FakeEventReminderNotifier()
+def fake_notifier():
+    return FakeNotifier()
 
 
 @pytest.fixture
-def calendar(clock, notifier):
-    calendar = Calendar('test_channel', clock, notifier, EventCodeProvider(FakeSequenceGenerator()))
-    calendar.add_user('Admin#001', is_admin=True)
-    calendar.add_user('Bob#002', event_creation_enabled=False)
-    calendar.add_user('Alice#003')
-    calendar.add_user('John#004')
-    calendar.add_user('Jane#005')
+def calendar(fake_clock, fake_notifier):
+    calendar = Calendar('test_guild', 'test_channel')
     return calendar
+
+
+@pytest.fixture
+def fake_sequence_generator():
+    return FakeSequenceGenerator()
+
+
+@pytest.fixture(scope='session')
+def dsn():
+    return build_dsn()
+
+
+@pytest.fixture(scope='session')
+def db(dsn):
+    return get_database_engine(dsn)
+
+
+@pytest.fixture(scope='function')
+def session_factory(db):
+    map_tables(db)
+    return get_session_factory(db)
