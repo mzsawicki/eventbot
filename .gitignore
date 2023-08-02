@@ -160,3 +160,7 @@ cython_debug/
 
 # Coverage cache
 .DS_Store
+
+# Env files
+prod.env
+test.env
