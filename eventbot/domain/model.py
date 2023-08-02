@@ -9,7 +9,8 @@ from eventbot.domain.enums import Decision
 from eventbot.domain.services import (
     create_code_for_event,
     create_message_for_event_start_notification,
-    create_message_for_event_reminder_notification
+    create_message_for_event_reminder_notification,
+    create_message_for_event_creation_notification
 )
 from eventbot.domain.exceptions import (
     EventNotFound,
@@ -29,7 +30,7 @@ class Calendar:
         self._version = 0
 
     def add_event(self, name: str, time: datetime, owner_handle: str,
-                  clock: Clock, sequence_generator: EventSequenceGenerator,
+                  clock: Clock, sequence_generator: EventSequenceGenerator, notifier: Notifier,
                   reminder_delta: timedelta = None) -> str:
         current_time = clock.now()
         if time <= current_time:
@@ -42,6 +43,12 @@ class Calendar:
             if requested_reminder_time <= current_time:
                 raise ReminderInThePast(current_time, requested_reminder_time)
             event.set_reminder(reminder_delta)
+            notification_message = create_message_for_event_creation_notification(name, str(event_code),
+                                                                                  time, requested_reminder_time)
+            notifier.notify(notification_message, [owner_handle, ])
+        else:
+            notification_message = create_message_for_event_creation_notification(name, str(event_code), time)
+            notifier.notify(notification_message, [owner_handle, ])
         self._events[str(event_code)] = event
         self._bump_version()
         return str(event_code)
