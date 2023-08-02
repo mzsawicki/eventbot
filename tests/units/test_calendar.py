@@ -114,3 +114,30 @@ def test_cannot_set_reminder_in_the_past(fake_clock, calendar, fake_sequence_gen
     with pytest.raises(ReminderInThePast):
         calendar.add_event('Test event', datetime(2023, 6, 7, 12), 'Alice#003',
                            fake_clock, fake_sequence_generator, reminder_delta=timedelta(days=3))
+
+
+def test_users_are_reminded_only_once(fake_clock, fake_notifier, calendar, fake_sequence_generator):
+    fake_clock.set_time(datetime(2023, 10, 11, 13, 44, 23))
+    calendar.add_event('Test event', datetime(2023, 10, 18, 20), 'Alice#003', fake_clock, fake_sequence_generator,
+                       reminder_delta=timedelta(hours=1))
+    fake_clock.set_time(datetime(2023, 10, 18, 19, 1))
+    calendar.send_pending_notifications(fake_clock, fake_notifier)
+    notified_handles_1 = fake_notifier.notified_handles
+    fake_notifier.clear()
+    fake_clock.progress(timedelta(minutes=1))
+    calendar.send_pending_notifications(fake_clock, fake_notifier)
+    notified_handles_2 = fake_notifier.notified_handles
+    assert notified_handles_1 == ['Alice#003'] and notified_handles_2 == []
+
+
+def test_users_are_notified_on_event_start_only_once(fake_clock, fake_notifier, calendar, fake_sequence_generator):
+    fake_clock.set_time(datetime(2023, 10, 11, 13, 44, 23))
+    calendar.add_event('Test event', datetime(2023, 10, 18, 20), 'Alice#003', fake_clock, fake_sequence_generator)
+    fake_clock.set_time(datetime(2023, 10, 18, 20))
+    calendar.send_pending_notifications(fake_clock, fake_notifier)
+    notified_handles_1 = fake_notifier.notified_handles
+    fake_notifier.clear()
+    fake_clock.progress(timedelta(minutes=1))
+    calendar.send_pending_notifications(fake_clock, fake_notifier)
+    notified_handles_2 = fake_notifier.notified_handles
+    assert notified_handles_1 == ['Alice#003'] and notified_handles_2 == []

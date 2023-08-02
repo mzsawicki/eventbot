@@ -16,6 +16,3 @@ def test_created_calendar_can_be_later_retrieved(session_factory, fake_clock, fa
         retrieved_calendar = unit_of_work.calendars.get_calendar_by_guild_and_channel(test_guild, test_channel)
         retrieved_calendar.delete_event('Alice#003', event_code)
         unit_of_work.commit()
-
-
-

@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, String, ForeignKey, UUID, DateTime, Engine, types, Enum, Integer
+from sqlalchemy import Table, Column, String, ForeignKey, UUID, DateTime, Engine, types, Enum, Integer, Boolean, and_
 from sqlalchemy.orm import registry, relationship, keyfunc_mapping
 
 from eventbot.domain.model import Calendar, Event, Declaration
@@ -19,7 +19,7 @@ class EventCodeVO(types.TypeDecorator):
 def map_tables(engine: Engine) -> None:
     mapper_registry = registry()
 
-    calendar_table = Table(
+    calendar = Table(
         'calendar',
         mapper_registry.metadata,
         Column('id', UUID, primary_key=True, key='_id'),
@@ -28,7 +28,7 @@ def map_tables(engine: Engine) -> None:
         Column('channel_handle', String(64), nullable=False, unique=True, key='_channel_handle'),
     )
 
-    event_table = Table(
+    event = Table(
         'event',
         mapper_registry.metadata,
         Column('id', UUID, primary_key=True, key='_id'),
@@ -37,10 +37,12 @@ def map_tables(engine: Engine) -> None:
         Column('code', EventCodeVO, nullable=False, unique=True, key='_code'),
         Column('time', DateTime, nullable=False, key='_time'),
         Column('owner_handle', String(64), nullable=False, key='_owner_handle'),
-        Column('remind_at', DateTime, nullable=True, key='_remind_at')
+        Column('remind_at', DateTime, nullable=True, key='_remind_at'),
+        Column('removed', Boolean, nullable=False, key='_removed'),
+        Column('reminded', Boolean, nullable=False, key='_reminded')
     )
 
-    declaration_table = Table(
+    declaration = Table(
         'declaration',
         mapper_registry.metadata,
         Column('id', UUID, primary_key=True),
@@ -49,13 +51,16 @@ def map_tables(engine: Engine) -> None:
         Column('decision', Enum(Decision), nullable=False),
     )
 
-    mapper_registry.map_imperatively(Calendar, calendar_table, properties={
-        '_events': relationship(Event, collection_class=keyfunc_mapping(lambda event: str(event._code)))
-    })
-    mapper_registry.map_imperatively(Event, event_table, properties={
+    mapper_registry.map_imperatively(Calendar, calendar, properties={
+        '_events': relationship(
+            Event,
+            collection_class=keyfunc_mapping(lambda event: str(event._code)),
+            primaryjoin=and_(event.c._calendar_id == calendar.c._id, event.c._removed == False)
+        )})
+    mapper_registry.map_imperatively(Event, event, properties={
         '_declarations': relationship(Declaration)
     })
-    mapper_registry.map_imperatively(Declaration, declaration_table)
+    mapper_registry.map_imperatively(Declaration, declaration)
 
     mapper_registry.metadata.drop_all(bind=engine)
     mapper_registry.metadata.create_all(bind=engine)

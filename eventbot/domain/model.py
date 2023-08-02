@@ -46,12 +46,12 @@ class Calendar:
         self._bump_version()
         return str(event_code)
 
-    def delete_event(self, user_handle: str, event_code: str,) -> None:
+    def delete_event(self, user_handle: str, event_code: str) -> None:
         if event_code not in self._events:
             raise EventNotFound(event_code)
         event: Event = self._events[event_code]
         event.ensure_user_can_delete(user_handle)
-        del self._events[event_code]
+        event.remove()
         self._bump_version()
 
     def set_reminder_for_event(self, user_handle: str, event_code: str, remind_time: timedelta) -> None:
@@ -102,6 +102,8 @@ class Event:
         self._owner_handle: str = owner_handle
         self._remind_at: Optional[datetime] = None
         self._declarations: List[Declaration] = []
+        self._removed: bool = False
+        self._reminded: bool = False
 
     def set_reminder(self, remind_delta: timedelta) -> None:
         self._remind_at = self._time - remind_delta
@@ -111,9 +113,9 @@ class Event:
         if self._is_pending(clock):
             message = create_message_for_event_start_notification(self._name, str(self._code))
             notifier.notify(message, handles_to_notify)
+            self.remove()
         elif self._is_to_remind(clock):
-            message = create_message_for_event_reminder_notification(self._name, str(self._code), self._time)
-            notifier.notify(message, handles_to_notify)
+            self._remind(handles_to_notify, notifier)
 
     def declare_yes(self, user_handle: str) -> None:
         self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.YES))
@@ -132,13 +134,28 @@ class Event:
         if not self._is_user_owner(user_handle):
             raise UserNotPermittedToSetReminderForEvent(user_handle, str(self._code))
 
+    def remove(self) -> None:
+        self._removed = True
+
+    def _remind(self, handles_to_notify: List[str], notifier: Notifier) -> None:
+        message = create_message_for_event_reminder_notification(self._name, str(self._code), self._time)
+        notifier.notify(message, handles_to_notify)
+        self._reminded = True
+
+    def _dispose(self, handles_to_notify: List[str], notifier: Notifier) -> None:
+        message = create_message_for_event_start_notification(self._name, str(self._code))
+        notifier.notify(message, handles_to_notify)
+        self.remove()
+
     def _is_user_owner(self, user_handle: str) -> bool:
         return user_handle == self._owner_handle
 
     def _is_pending(self, clock: Clock) -> bool:
-        return clock.now() >= self._time
+        return not self._removed and clock.now() >= self._time
 
     def _is_to_remind(self, clock: Clock) -> bool:
+        if not self._remind_at or self._reminded:
+            return False
         return clock.now() >= self._remind_at
 
 

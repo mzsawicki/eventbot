@@ -34,6 +34,9 @@ class FakeNotifier(Notifier):
     def notify(self, message: str, user_handles: List[str]) -> None:
         self._notified_handles = user_handles
 
+    def clear(self) -> None:
+        self._notified_handles = []
+
     @property
     def notified_handles(self) -> List[str]:
         return self._notified_handles
