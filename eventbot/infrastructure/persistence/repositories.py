@@ -10,6 +10,7 @@ class SQLCalendarRepository(CalendarRepository):
 
     def get_calendar_by_guild_and_channel(self, guild_handle: str, channel_handle: str) -> Calendar:
         return self._session.query(Calendar)\
+            .with_for_update()\
             .filter_by(_guild_handle=guild_handle)\
             .filter_by(_channel_handle=channel_handle)\
             .one()
