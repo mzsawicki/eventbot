@@ -8,6 +8,13 @@ class EventInThePast(Exception):
         self.requested_time: datetime = requested_time
 
 
+class ReminderInThePast(Exception):
+    def __init__(self, now: datetime, requested_time: datetime):
+        super().__init__()
+        self.now: datetime = now
+        self.requested_time: datetime = requested_time
+
+
 class EventNotFound(Exception):
     def __init__(self, event_code: str):
         super().__init__()

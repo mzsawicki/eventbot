@@ -6,7 +6,8 @@ from eventbot.domain import (
     UserNotPermittedToDeleteEvent,
     EventInThePast,
     UserNotPermittedToSetReminderForEvent,
-    EventNotFound
+    EventNotFound,
+    ReminderInThePast
 )
 
 
@@ -14,7 +15,7 @@ def test_event_members_are_notified_on_reminder(fake_clock, fake_notifier, calen
     fake_clock.set_time(datetime(2023, 8, 1, 12))
 
     event_code = calendar.add_event('Test event', datetime(2023, 8, 2, 12, 30), 'Alice#003',
-                                    fake_clock, fake_sequence_generator, reminder_time=timedelta(minutes=10))
+                                    fake_clock, fake_sequence_generator, reminder_delta=timedelta(minutes=10))
     calendar.declare_yes_to_event('Bob#002', event_code)
     calendar.declare_maybe_to_event('Admin#001', event_code)
     calendar.declare_yes_to_event('John#004', event_code)
@@ -32,7 +33,7 @@ def test_event_members_are_notified_even_if_reminder_is_late(fake_clock, fake_no
 
     event_code = calendar.add_event('Test event', datetime(2023, 9, 30, 18), 'John#004',
                                     fake_clock, fake_sequence_generator,
-                                    reminder_time=timedelta(minutes=30))
+                                    reminder_delta=timedelta(minutes=30))
     calendar.declare_yes_to_event('Alice#003', event_code)
 
     fake_clock.set_time(datetime(2023, 9, 30, 17, 55))
@@ -80,7 +81,7 @@ def test_user_can_set_reminder_for_own_event_after_creation(fake_clock, calendar
 def test_user_can_re_set_reminder_time(fake_clock, calendar, fake_notifier, fake_sequence_generator):
     fake_clock.set_time(datetime(2023, 6, 6, 12, 34, 52))
     event_code = calendar.add_event('Test event', datetime(2023, 6, 7, 12), 'Alice#003',
-                                    fake_clock, fake_sequence_generator, reminder_time=timedelta(hours=2))
+                                    fake_clock, fake_sequence_generator, reminder_delta=timedelta(hours=2))
     calendar.declare_yes_to_event('Bob#002', event_code)
     calendar.set_reminder_for_event('Alice#003', event_code, timedelta(hours=3))
     fake_clock.set_time(datetime(2023, 6, 7, 9))
@@ -93,7 +94,7 @@ def test_users_are_not_reminded_too_early_when_reminder_is_re_set(fake_clock, ca
     fake_clock.set_time(datetime(2023, 12, 23, 13, 1, 22))
     event_code = calendar.add_event('Test event', datetime(2023, 12, 24, 12), 'Alice#003',
                                     fake_clock, fake_sequence_generator,
-                                    reminder_time=timedelta(hours=3))
+                                    reminder_delta=timedelta(hours=3))
     calendar.declare_yes_to_event('Bob#002', event_code)
     fake_clock.progress(timedelta(hours=3))
     calendar.set_reminder_for_event('Alice#003', event_code, timedelta(hours=1))
@@ -106,3 +107,10 @@ def test_cannot_set_reminder_for_non_existent_event(fake_clock, calendar, fake_n
     fake_clock.set_time(datetime(2023, 5, 3, 15, 32, 10))
     with pytest.raises(EventNotFound):
         calendar.set_reminder_for_event('Admin#001', 'tes-1', timedelta(hours=1))
+
+
+def test_cannot_set_reminder_in_the_past(fake_clock, calendar, fake_sequence_generator):
+    fake_clock.set_time(datetime(2023, 6, 6, 12, 34, 52))
+    with pytest.raises(ReminderInThePast):
+        calendar.add_event('Test event', datetime(2023, 6, 7, 12), 'Alice#003',
+                           fake_clock, fake_sequence_generator, reminder_delta=timedelta(days=3))

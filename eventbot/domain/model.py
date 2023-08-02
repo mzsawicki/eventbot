@@ -35,7 +35,7 @@ class Calendar:
         if time <= current_time:
             raise EventInThePast(current_time, time)
         event_code = create_code_for_event(name, sequence_generator)
-        event: Event = Event(name, event_code, time, owner_handle)
+        event: Event = Event(self._id, name, event_code, time, owner_handle)
         event.declare_yes(owner_handle)
         if reminder_delta is not None:
             requested_reminder_time = time - reminder_delta
@@ -93,8 +93,9 @@ class Calendar:
 
 
 class Event:
-    def __init__(self, name: str, code: EventCode, time: datetime, owner_handle: str):
+    def __init__(self, calendar_id: UUID, name: str, code: EventCode, time: datetime, owner_handle: str):
         self._id = uuid4()
+        self._calendar_id: UUID = calendar_id
         self._name: str = name
         self._code: EventCode = code
         self._time: datetime = time
@@ -141,7 +142,7 @@ class Event:
         return clock.now() >= self._remind_at
 
 
-@dataclass(init=True, frozen=True)
+@dataclass
 class Declaration:
     event_id: UUID
     user_handle: str

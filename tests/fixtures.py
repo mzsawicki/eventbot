@@ -3,8 +3,12 @@ from datetime import datetime
 import pytest
 
 from eventbot.domain import Calendar
-from eventbot.infrastructure.persistence import get_database_engine, get_session_factory, map_tables, build_dsn
-from eventbot.infrastructure.config import Config
+from eventbot.infrastructure.persistence import (
+    get_database_engine,
+    get_session_factory,
+    map_tables,
+    build_dsn
+)
 
 from tests.fakes import FakeClock, FakeNotifier, FakeSequenceGenerator
 
@@ -37,10 +41,10 @@ def dsn():
 
 @pytest.fixture(scope='session')
 def db(dsn):
-    return get_database_engine(dsn)
+    yield get_database_engine(dsn)
 
 
 @pytest.fixture(scope='function')
 def session_factory(db):
     map_tables(db)
-    return get_session_factory(db)
+    yield get_session_factory(db)

@@ -4,7 +4,8 @@ from .exceptions import (
     EventInThePast,
     EventNotFound,
     UserNotPermittedToDeleteEvent,
-    UserNotPermittedToSetReminderForEvent
+    UserNotPermittedToSetReminderForEvent,
+    ReminderInThePast
 )
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     'EventNotFound',
     'UserNotPermittedToDeleteEvent',
     'UserNotPermittedToSetReminderForEvent',
+    'ReminderInThePast',
     'Calendar',
     'Notifier',
     'Clock',
