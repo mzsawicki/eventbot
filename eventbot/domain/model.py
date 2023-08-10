@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from eventbot.domain.ports import Clock, Notifier, EventSequenceGenerator
 from eventbot.domain.vo import EventCode
 from eventbot.domain.enums import Decision
-from eventbot.domain.services import (
-    create_code_for_event,
+from eventbot.domain.services.create_code_for_event import create_code_for_event
+from eventbot.domain.services.notification_messages import  (
     create_message_for_event_start_notification,
     create_message_for_event_reminder_notification,
     create_message_for_event_creation_notification

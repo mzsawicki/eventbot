@@ -1,7 +1,9 @@
 import nextcord
 from nextcord.ext import commands
 
-bot = commands.Bot()
+intents = nextcord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(intents=intents)
 
 
 @bot.event
@@ -9,10 +11,15 @@ async def on_ready():
     print('Ready')
 
 
-@bot.slash_command('add')
-async def add_calendar_event(interaction: nextcord.Interaction):
+@bot.slash_command('event')
+async def main(interaction: nextcord.Interaction):
+    pass
+
+
+@main.subcommand('add')
+async def add(interaction: nextcord.Interaction):
     await interaction.send('Test')
 
 
-def run(token: str):
+def run_bot(token: str):
     bot.run(token)
