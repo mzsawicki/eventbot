@@ -101,6 +101,12 @@ def test_pattern_weekday_in_count_weeks():
     assert result.time == datetime(2023, 8, 26, 21)
 
 
+def test_pattern_weekday_in_count_weeks_reverse():
+    parser = PolishParser(FakeClock(datetime(2023, 8, 10)))
+    result = parser('Impreza o 21:00 za dwa tygodnie w sobotę')
+    assert result.time == datetime(2023, 8, 26, 21)
+
+
 def test_as_many_digits_as_possible():
     parser = PolishParser(FakeClock(datetime(2023, 8, 10)))
     result = parser('Start nocnej zmiany, 31.12.2023 23:45')

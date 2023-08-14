@@ -192,9 +192,11 @@ PATTERN_DATE_ORDINAL = [Tag.ORDINAL_DAY, Tag.REPEATER_MONTH_NAME]
 PATTERN_DATE_SCALAR = [Tag.SCALAR_DAY, Tag.REPEATER_MONTH_NAME]
 PATTERN_WEEK_DAY = [Tag.REPEATER_DAY_NAME, ]
 PATTERN_NEXT_WEEK_DAY = [Tag.GRABBER, Tag.REPEATER_DAY_NAME, ]
-PATTERN_WEEK_DAY_COUNT_WEEKS = [Tag.REPEATER_DAY_NAME, Tag.SEPARATOR, Tag.SCALAR, Tag.REPEATER_WEEKS] # todo
+PATTERN_WEEK_DAY_IN_WEEK = [Tag.REPEATER_DAY_NAME, Tag.SEPARATOR, Tag.REPEATER_WEEK]
+PATTERN_WEEK_DAY_IN_WEEK_REVERSE = [Tag.SEPARATOR, Tag.REPEATER_WEEK, Tag.SEPARATOR, Tag.REPEATER_DAY_NAME]
+PATTERN_WEEK_DAY_COUNT_WEEKS = [Tag.REPEATER_DAY_NAME, Tag.SEPARATOR, Tag.SCALAR, Tag.REPEATER_WEEKS]
 PATTERN_WEEK_DAY_COUNT_WEEKS_REVERSE = [Tag.SEPARATOR, Tag.SCALAR, Tag.REPEATER_WEEKS,
-                                        Tag.SEPARATOR, Tag.REPEATER_DAY_NAME] # todo
+                                        Tag.SEPARATOR, Tag.REPEATER_DAY_NAME]
 
 AMBIGUOUS_TIME_PATTERNS = {
     'ampm-single-scalar': PATTERN_TIME_AMPM_SINGLE_SCALAR,
@@ -216,12 +218,13 @@ UNEQUIVOCAL_TIME_PATTERNS = {
 }
 
 UNEQUIVOCAL_DATE_PATTERNS = {
-    'next-week': PATTERN_DATE_NEXT_WEEK,
     'day-after-next-day': PATTERN_DATE_DAY_AFTER_NEXT_DAY,
     'scalar-full': PATTERN_DATE_SCALAR_FULL,
     'scalar-full-reverse': PATTERN_DATE_SCALAR_FULL_REVERSE,
     'month-name-full': PATTERN_DATE_MONTH_NAME_FULL,
     'next-week-day': PATTERN_NEXT_WEEK_DAY,
+    'week-day-next-week': PATTERN_WEEK_DAY_IN_WEEK,
+    'week-day-next-week-reverse': PATTERN_WEEK_DAY_IN_WEEK_REVERSE,
     'week-day-count-weeks': PATTERN_WEEK_DAY_COUNT_WEEKS,
     'week-day-count-weeks-reverse': PATTERN_WEEK_DAY_COUNT_WEEKS_REVERSE,
 }
@@ -230,7 +233,8 @@ AMBIGUOUS_DATE_PATTERNS = {
     'next-day': PATTERN_DATE_NEXT_DAY,
     'scalar': PATTERN_DATE_SCALAR,
     'ordinal': PATTERN_DATE_ORDINAL,
-    'week-day': PATTERN_WEEK_DAY
+    'week-day': PATTERN_WEEK_DAY,
+    'next-week': PATTERN_DATE_NEXT_WEEK,
 }
 
 
@@ -342,6 +346,46 @@ def parse_pattern_weekday_next_week(now: datetime, tokens: List[Token]) -> date:
     return now + timedelta(days=days_delta)
 
 
+def parse_pattern_week_day_in_week(now: datetime, tokens: List[Token]) -> date:
+    day_name, _, _ = tokens
+    week_day_number = PolishParser.WEEK_DAY_NUMBERS[day_name.word]
+    days_delta = week_day_number - now.weekday()
+    if days_delta <= 0:
+        days_delta += 7
+    days_delta += 7
+    return now.date() + timedelta(days=days_delta)
+
+
+def parse_pattern_week_day_in_week_reverse(now: datetime, tokens: List[Token]) -> date:
+    _, _, _, day_name = tokens
+    week_day_number = PolishParser.WEEK_DAY_NUMBERS[day_name.word]
+    days_delta = week_day_number - now.weekday()
+    if days_delta <= 0:
+        days_delta += 7
+    days_delta += 7
+    return now.date() + timedelta(days=days_delta)
+
+
+def parse_pattern_week_day_count_weeks(now: datetime, tokens: List[Token]) -> date:
+    day_name, _, count, _ = tokens
+    week_day_number = PolishParser.WEEK_DAY_NUMBERS[day_name.word]
+    days_delta = week_day_number - now.weekday()
+    if days_delta <= 0:
+        days_delta += 7
+    days_delta += int(count.word) * 7
+    return now.date() + timedelta(days=days_delta)
+
+
+def parse_pattern_week_day_count_weeks_reverse(now: datetime, tokens: List[Token]) -> date:
+    _, count, _, _, day_name = tokens
+    week_day_number = PolishParser.WEEK_DAY_NUMBERS[day_name.word]
+    days_delta = week_day_number - now.weekday()
+    if days_delta <= 0:
+        days_delta += 7
+    days_delta += int(count.word) * 7
+    return now.date() + timedelta(days=days_delta)
+
+
 HANDLERS = {
     'ampm-scalar': parse_pattern_ampm,
     'ampm-ordinal': parse_pattern_ampm,
@@ -365,7 +409,11 @@ HANDLERS = {
     'scalar': parse_pattern_date_scalar,
     'ordinal': parse_pattern_date_scalar,
     'week-day': parse_pattern_week_day,
-    'next-week-day': parse_pattern_weekday_next_week
+    'next-week-day': parse_pattern_weekday_next_week,
+    'week-day-next-week': parse_pattern_week_day_in_week,
+    'week-day-next-week-reverse': parse_pattern_week_day_in_week_reverse,
+    'week-day-count-weeks': parse_pattern_week_day_count_weeks,
+    'week-day-count-weeks-reverse': parse_pattern_week_day_count_weeks_reverse,
 }
 
 
@@ -599,6 +647,7 @@ class PolishParser(Parser):
     TIME_RELATION_WORDS = {
         'za': 'in',
         'o': 'at',
+        'w': 'at',
         'na': 'at',
         'po': 'after',
         'nastepny': 'next',
