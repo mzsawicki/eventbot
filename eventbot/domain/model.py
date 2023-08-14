@@ -2,16 +2,18 @@ from uuid import UUID, uuid4
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict
 from dataclasses import dataclass
+from enum import Enum
 
 from eventbot.domain.ports import Clock, Notifier, EventSequenceGenerator
 from eventbot.domain.vo import EventCode
 from eventbot.domain.enums import Decision
 from eventbot.domain.services.create_code_for_event import create_code_for_event
-from eventbot.domain.services.notification_messages import  (
+from eventbot.domain.services.notification_messages import (
     create_message_for_event_start_notification,
     create_message_for_event_reminder_notification,
     create_message_for_event_creation_notification
 )
+from eventbot.domain.services.parser import Parser, PolishParser
 from eventbot.domain.exceptions import (
     EventNotFound,
     EventInThePast,
@@ -21,17 +23,31 @@ from eventbot.domain.exceptions import (
 )
 
 
+class CalendarLanguage(Enum):
+    PL = 'pl'
+
+
 class Calendar:
-    def __init__(self, guild_handle: str, channel_handle: str):
+    def __init__(self, guild_handle: str, channel_handle: str, language: CalendarLanguage = CalendarLanguage.PL):
         self._id: UUID = uuid4()
         self._guild_handle: str = guild_handle
         self._channel_handle: str = channel_handle
+        self._language = language
         self._events: Dict[str, Event] = {}
         self._version = 0
 
-    def add_event(self, name: str, time: datetime, owner_handle: str,
-                  clock: Clock, sequence_generator: EventSequenceGenerator, notifier: Notifier,
-                  reminder_delta: timedelta = None) -> str:
+    def add_event(self,
+                  prompt: str,
+                  owner_handle: str,
+                  clock: Clock,
+                  sequence_generator: EventSequenceGenerator,
+                  notifier: Notifier
+                  ) -> str:
+        parser: Parser = self._get_parser(clock)
+        event_parsing_result = parser(prompt)
+        name = event_parsing_result.name
+        time = event_parsing_result.time
+        reminder_delta = event_parsing_result.reminder_delta
         current_time = clock.now()
         if time <= current_time:
             raise EventInThePast(current_time, time)
@@ -94,6 +110,10 @@ class Calendar:
         event: Event = self._events[event_code]
         event.declare_maybe(user_handle)
         self._bump_version()
+
+    def _get_parser(self, clock: Clock):
+        if self._language == CalendarLanguage.PL:
+            return PolishParser(clock)
 
     def _bump_version(self) -> None:
         self._version += 1

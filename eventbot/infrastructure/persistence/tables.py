@@ -1,7 +1,7 @@
 from sqlalchemy import Table, Column, String, ForeignKey, UUID, DateTime, Engine, types, Enum, Integer, Boolean, and_
 from sqlalchemy.orm import registry, relationship, keyfunc_mapping
 
-from eventbot.domain.model import Calendar, Event, Declaration
+from eventbot.domain.model import Calendar, Event, Declaration, CalendarLanguage
 from eventbot.domain.vo import EventCode
 from eventbot.domain.enums import Decision
 
@@ -26,6 +26,7 @@ def map_tables(engine: Engine) -> None:
         Column('version', Integer, nullable=False, key='_version'),
         Column('guild_handle', String(64), nullable=False, unique=True, key='_guild_handle'),
         Column('channel_handle', String(64), nullable=False, unique=True, key='_channel_handle'),
+        Column('language', Enum(CalendarLanguage), nullable=False, key='_language')
     )
 
     event = Table(

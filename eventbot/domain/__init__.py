@@ -1,4 +1,4 @@
-from .model import Calendar
+from .model import Calendar, CalendarLanguage
 from .ports import Notifier, Clock, EventSequenceGenerator
 from .exceptions import (
     EventInThePast,
@@ -17,5 +17,6 @@ __all__ = [
     'Calendar',
     'Notifier',
     'Clock',
-    'EventSequenceGenerator'
+    'EventSequenceGenerator',
+    'CalendarLanguage'
 ]

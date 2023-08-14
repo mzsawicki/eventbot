@@ -5,5 +5,5 @@ from tests.fixtures import (
     fake_sequence_generator,
     dsn,
     db,
-    session_factory
+    session_factory,
 )

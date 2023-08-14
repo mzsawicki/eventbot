@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from eventbot.domain import Calendar
+from eventbot.domain import Calendar, CalendarLanguage
 from eventbot.infrastructure.persistence import (
     get_database_engine,
     get_session_factory,
@@ -24,8 +24,8 @@ def fake_notifier():
 
 
 @pytest.fixture
-def calendar(fake_clock, fake_notifier):
-    calendar = Calendar('test_guild', 'test_channel')
+def calendar():
+    calendar = Calendar('test_guild', 'test_channel', CalendarLanguage.PL)
     return calendar
 
 
