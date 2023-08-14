@@ -43,6 +43,9 @@ class Tag(Enum):
     ORDINAL_MONTH = 'ordinal-month'
     ORDINAL_HOUR = 'ordinal-hour'
 
+    KEYWORD = 'keyword'
+    KEYWORD_REMIND = 'keyword-remind'
+
     def __repr__(self):
         return self.value
 
@@ -167,6 +170,14 @@ def is_ordinal_masc(word: str) -> bool:
     return word in PolishParser.ORDINALS_MASC
 
 
+def is_keyword(word: str) -> bool:
+    return is_keyword_remind(word)
+
+
+def is_keyword_remind(word: str) -> bool:
+    return word == 'remind'
+
+
 PATTERN_TIME_24_SCALAR = [Tag.SCALAR_HOUR, Tag.SCALAR_MINUTE]
 PATTERN_TIME_24_ORDINAL = [Tag.ORDINAL_HOUR, Tag.SCALAR_MINUTE]
 PATTERN_TIME_24_SINGLE_SCALAR = [Tag.SEPARATOR, Tag.SCALAR_HOUR]
@@ -197,6 +208,10 @@ PATTERN_WEEK_DAY_IN_WEEK_REVERSE = [Tag.SEPARATOR, Tag.REPEATER_WEEK, Tag.SEPARA
 PATTERN_WEEK_DAY_COUNT_WEEKS = [Tag.REPEATER_DAY_NAME, Tag.SEPARATOR, Tag.SCALAR, Tag.REPEATER_WEEKS]
 PATTERN_WEEK_DAY_COUNT_WEEKS_REVERSE = [Tag.SEPARATOR, Tag.SCALAR, Tag.REPEATER_WEEKS,
                                         Tag.SEPARATOR, Tag.REPEATER_DAY_NAME]
+
+PATTERN_REMINDER = [Tag.KEYWORD_REMIND, Tag.REPEATER_TIME, Tag.POINTER]
+PATTERN_REMINDER_COUNT = [Tag.KEYWORD_REMIND, Tag.SCALAR, Tag.REPEATER_TIME, Tag.POINTER]
+
 
 AMBIGUOUS_TIME_PATTERNS = {
     'ampm-single-scalar': PATTERN_TIME_AMPM_SINGLE_SCALAR,
@@ -235,6 +250,11 @@ AMBIGUOUS_DATE_PATTERNS = {
     'ordinal': PATTERN_DATE_ORDINAL,
     'week-day': PATTERN_WEEK_DAY,
     'next-week': PATTERN_DATE_NEXT_WEEK,
+}
+
+REMINDER_PATTERNS = {
+    'reminder': PATTERN_REMINDER,
+    'reminder-count': PATTERN_REMINDER_COUNT
 }
 
 
@@ -386,6 +406,33 @@ def parse_pattern_week_day_count_weeks_reverse(now: datetime, tokens: List[Token
     return now.date() + timedelta(days=days_delta)
 
 
+def parse_reminder(now: datetime, tokens: List[Token]) -> timedelta:
+    _, unit_token, _ = tokens
+    unit = unit_token.word
+    if unit == 'week':
+        return timedelta(days=7)
+    elif unit == 'day':
+        return timedelta(days=1)
+    elif unit == 'hour':
+        return timedelta(hours=1)
+    elif unit == 'minute':
+        return timedelta(minutes=1)
+
+
+def parse_reminder_count(now: datetime, tokens: List[Token]) -> timedelta:
+    _, count_token, unit_token, _ = tokens
+    count = int(count_token.word)
+    unit = unit_token.word
+    if unit == 'weeks':
+        return timedelta(days=count*7)
+    elif unit == 'days':
+        return timedelta(days=count)
+    elif unit == 'hours':
+        return timedelta(hours=count)
+    elif unit == 'minutes':
+        return timedelta(minutes=count)
+
+
 HANDLERS = {
     'ampm-scalar': parse_pattern_ampm,
     'ampm-ordinal': parse_pattern_ampm,
@@ -414,6 +461,8 @@ HANDLERS = {
     'week-day-next-week-reverse': parse_pattern_week_day_in_week_reverse,
     'week-day-count-weeks': parse_pattern_week_day_count_weeks,
     'week-day-count-weeks-reverse': parse_pattern_week_day_count_weeks_reverse,
+    'reminder': parse_reminder,
+    'reminder-count': parse_reminder_count
 }
 
 
@@ -677,17 +726,21 @@ class PolishParser(Parser):
         'minuta': 'minute',
         'minute': 'minute',
         'minuty': 'minutes',
+        'minut': 'minutes',
         'godzina': 'hour',
         'godzine': 'hour',
         'godzinie': 'hour',
         'godziny': 'hours',
+        'godzin': 'hours',
         'dzien': 'day',
         'dni': 'days',
         'dnia': 'day',
         'tydzien': 'week',
         'tygodnie': 'weeks',
+        'tygodni': 'weeks',
         'miesiac': 'month',
-        'miesiace': 'months'
+        'miesiace': 'months',
+        'miesięcy': 'months'
     }
 
     WEEK_DAY_NAMES = {
@@ -775,7 +828,8 @@ class PolishParser(Parser):
         'zawiadomieni',
         'przypomnienie',
         'przypomniec',
-        'przypomnij'
+        'przypomnij',
+        'przypomnieniem'
     ]
 
     COMMAND_SYNONYMS = {
@@ -820,7 +874,8 @@ class PolishParser(Parser):
         tokens = PolishParser._tokenize(normalized_text)
         reduced_tokens = PolishParser._reduce(tokens)
         tagged_tokens = [token for token in reduced_tokens if token.tags]
-        date_, remaining_tokens = self._seek_date_unequivocal(tagged_tokens)
+        reminder_delta, remaining_tokens = self._seek_reminder_delta(tagged_tokens)
+        date_, remaining_tokens = self._seek_date_unequivocal(remaining_tokens)
         time, remaining_tokens = self._seek_time_unequivocal(remaining_tokens)
         if not date_:
             date_, remaining_tokens = self._seek_date_ambiguous(remaining_tokens)
@@ -831,7 +886,10 @@ class PolishParser(Parser):
         datetime_ = datetime(year=date_.year, month=date_.month, day=date_.day) + time
         untagged_tokens = [token for token in reduced_tokens if not token.tags]
         event_name = self._seek_name(untagged_tokens, text)
-        return EventParsingResult(event_name, datetime_)
+        return EventParsingResult(event_name, datetime_, reminder_delta=reminder_delta)
+
+    def _seek_reminder_delta(self, tokens: List[Token]) -> (Optional[timedelta], List[Token]):
+        return self._parse(tokens, REMINDER_PATTERNS)
 
     def _seek_time_unequivocal(self, tokens: List[Token]) -> (Optional[timedelta], List[Token]):
         return self._parse(tokens, UNEQUIVOCAL_TIME_PATTERNS)
@@ -983,6 +1041,10 @@ class PolishParser(Parser):
                     token.tags.append(Tag.ORDINAL_DAY)
                 if is_scalar_month(token.word):
                     token.tags.append(Tag.ORDINAL_MONTH)
+        if is_keyword(word):
+            token.tags.append(Tag.KEYWORD)
+            if is_keyword_remind(word):
+                token.tags.append(Tag.KEYWORD_REMIND)
         return token
 
     @staticmethod

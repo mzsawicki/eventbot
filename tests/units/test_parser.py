@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 from eventbot.domain.services.parser.polish import PolishParser
@@ -111,3 +111,15 @@ def test_as_many_digits_as_possible():
     parser = PolishParser(FakeClock(datetime(2023, 8, 10)))
     result = parser('Start nocnej zmiany, 31.12.2023 23:45')
     assert result.time == datetime(2023, 12, 31, 23, 45)
+
+
+def test_parsing_reminder_count_units():
+    parser = PolishParser(FakeClock(datetime(2023, 8, 10)))
+    result = parser('Wydarzenie za pojutrze o 15, z przypomnieniem 10 minut przed')
+    assert result.reminder_delta == timedelta(minutes=10) and result.time == datetime(2023, 8, 12, 15)
+
+
+def test_parsing_reminder_single_unit():
+    parser = PolishParser(FakeClock(datetime(2023, 8, 10)))
+    result = parser('Wydarzenie jutro o drugiej po południu. Przypomnij mi godzinę wcześniej')
+    assert result.reminder_delta == timedelta(hours=1) and result.time == datetime(2023, 8, 11, 14)
