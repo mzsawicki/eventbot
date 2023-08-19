@@ -2,7 +2,7 @@
 
 I didn't like Discord's event system, so I made my own.
 
-NOTE: Currently, only Polish language is supported.
+**NOTE: Currently, only Polish language is supported.**
 
 ## Running
 Create environment file by coping the example one:
