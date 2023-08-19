@@ -24,5 +24,5 @@ __all__ = [
     'CalendarLanguage',
     'CalendarRepository',
     'CalendarUnitOfWork',
-    'EventReadModel'
+    'EventReadModel',
 ]

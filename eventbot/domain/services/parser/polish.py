@@ -707,6 +707,7 @@ class PolishParser(Parser):
         'kolejnego': 'next',
         'kolejnym': 'next',
         'kolejną': 'next',
+        'dzisiaj': 'this day',
         'jutro': 'next day',
         'pojutrze': 'day after next day',
         'za tydzien': 'next week',
@@ -881,7 +882,9 @@ class PolishParser(Parser):
             date_, remaining_tokens = self._seek_date_ambiguous(remaining_tokens)
         if not time:
             time, remaining_tokens = self._seek_time_ambiguous(remaining_tokens)
-        if not date_ or not time:
+        if not date_:
+            date_ = self._now.date()
+        if not time:
             raise ParsingError(text)
         datetime_ = datetime(year=date_.year, month=date_.month, day=date_.day) + time
         untagged_tokens = [token for token in reduced_tokens if not token.tags]

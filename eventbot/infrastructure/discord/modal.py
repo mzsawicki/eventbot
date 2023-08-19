@@ -31,11 +31,21 @@ class EventModal(nextcord.ui.Modal):
         )
         self.add_item(self.time_prompt)
 
+        self.reminder_prompt = nextcord.ui.TextInput(
+            label=STRINGS[language][StringType.MODAL_EVENT_REMINDER_LABEL],
+            style=nextcord.TextInputStyle.paragraph,
+            placeholder=STRINGS[language][StringType.MODAL_EVENT_REMINDER_PLACEHOLDER],
+            required=False,
+            max_length=128
+        )
+
+        self.add_item(self.reminder_prompt)
+
     async def callback(self, interaction: nextcord.Interaction) -> None:
         guild = interaction.guild.name
         channel = interaction.channel.name
         user = interaction.user.mention
-        prompt = ' '.join([self.name.value, self.time_prompt.value])
+        prompt = ' '.join([self.name.value, self.time_prompt.value, 'remind', self.reminder_prompt.value])
         with self._uow as uow:
             if not uow.calendars.does_calendar_exist(guild, channel):
                 calendar = Calendar(guild, channel, language=self._language)

@@ -40,9 +40,8 @@ STRINGS = {
         StringType.MODAL_EVENT_TIME_LABEL: 'Kiedy?',
         StringType.MODAL_EVENT_TIME_PLACEHOLDER: 'np.: Jutro o 20; W następną sobotę o 10 AM;'
                                                  ' 22 lutego o ósmej wieczorem itd.',
-        StringType.MODAL_EVENT_REMINDER_LABEL: 'Ustawić przypomnienie?',
-        StringType.MODAL_EVENT_REMINDER_PLACEHOLDER: 'np. 10 minut wcześniej; godzinę wcześniej;'
-                                                     ' dwie godziny przed itd.',
+        StringType.MODAL_EVENT_REMINDER_LABEL: 'Ustawić przypomnienie? (opcjonalne)',
+        StringType.MODAL_EVENT_REMINDER_PLACEHOLDER: 'np. 10 minut wcześniej; dwie godziny przed itd.',
         StringType.COMMAND_ADD_DESCRIPTION: 'Dodaj nowe wydarzenie do tego kanału',
         StringType.COMMAND_LIST_DESCRIPTION: 'Lista nadchodzących wydarzeń na tym kanale',
         StringType.COMMAND_REMOVE_DESCRIPTION: 'Usuń wydarzenie z tego kanału',
