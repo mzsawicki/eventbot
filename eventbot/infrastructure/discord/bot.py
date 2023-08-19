@@ -50,11 +50,11 @@ def run_bot(token: str, uow: CalendarUnitOfWork, clock: Clock, config: Config = 
     async def on_ready():
         print('Ready')
 
-    @bot.slash_command('events')
+    @bot.slash_command('event')
     async def events(interaction: nextcord.Interaction):
         pass
 
-    @events.subcommand('add', description=STRINGS[config.language][StringType.COMMAND_ADD_DESCRIPTION])
+    @events.subcommand('new', description=STRINGS[config.language][StringType.COMMAND_ADD_DESCRIPTION])
     async def add_event(interaction: nextcord.Interaction):
         notifier = DiscordEventCreationNotifier(interaction, uow)
         modal = EventModal(uow, notifier, clock, config.language)
