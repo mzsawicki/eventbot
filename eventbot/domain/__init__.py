@@ -1,4 +1,6 @@
 from .model import Calendar, CalendarLanguage
+from .uow import CalendarUnitOfWork
+from .repositories import CalendarRepository
 from .ports import Notifier, Clock, EventSequenceGenerator
 from .exceptions import (
     EventInThePast,
@@ -7,6 +9,7 @@ from .exceptions import (
     UserNotPermittedToSetReminderForEvent,
     ReminderInThePast
 )
+from .read_models import EventReadModel
 
 __all__ = [
     'EventInThePast',
@@ -18,5 +21,8 @@ __all__ = [
     'Notifier',
     'Clock',
     'EventSequenceGenerator',
-    'CalendarLanguage'
+    'CalendarLanguage',
+    'CalendarRepository',
+    'CalendarUnitOfWork',
+    'EventReadModel'
 ]

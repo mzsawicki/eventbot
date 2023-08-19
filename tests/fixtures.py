@@ -7,6 +7,7 @@ from eventbot.infrastructure.persistence import (
     get_database_engine,
     get_session_factory,
     map_tables,
+    drop_tables,
     build_dsn
 )
 
@@ -39,12 +40,14 @@ def dsn():
     return build_dsn()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def db(dsn):
-    yield get_database_engine(dsn)
+    engine = get_database_engine(dsn)
+    yield engine
 
 
 @pytest.fixture(scope='function')
 def session_factory(db):
     map_tables(db)
     yield get_session_factory(db)
+    drop_tables(db)

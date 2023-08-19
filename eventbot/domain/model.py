@@ -8,11 +8,6 @@ from eventbot.domain.ports import Clock, Notifier, EventSequenceGenerator
 from eventbot.domain.vo import EventCode
 from eventbot.domain.enums import Decision
 from eventbot.domain.services.create_code_for_event import create_code_for_event
-from eventbot.domain.services.notification_messages import (
-    create_message_for_event_start_notification,
-    create_message_for_event_reminder_notification,
-    create_message_for_event_creation_notification
-)
 from eventbot.domain.services.parser import Parser, PolishParser
 from eventbot.domain.exceptions import (
     EventNotFound,
@@ -55,16 +50,13 @@ class Calendar:
         event: Event = Event(self._id, name, event_code, time, owner_handle)
         event.declare_yes(owner_handle)
         if reminder_delta is not None:
-            requested_reminder_time = time - reminder_delta
-            if requested_reminder_time <= current_time:
-                raise ReminderInThePast(current_time, requested_reminder_time)
+            reminder_time = time - reminder_delta
+            if reminder_time <= current_time:
+                raise ReminderInThePast(current_time, reminder_time)
             event.set_reminder(reminder_delta)
-            notification_message = create_message_for_event_creation_notification(name, str(event_code),
-                                                                                  time, requested_reminder_time)
-            notifier.notify(notification_message, [owner_handle, ])
+            notifier.notify_event_created(name, str(event_code), time, owner_handle, reminder_time)
         else:
-            notification_message = create_message_for_event_creation_notification(name, str(event_code), time)
-            notifier.notify(notification_message, [owner_handle, ])
+            notifier.notify_event_created(name, str(event_code), time, owner_handle)
         self._events[str(event_code)] = event
         self._bump_version()
         return str(event_code)
@@ -138,11 +130,11 @@ class Event:
     def handle_notification(self, clock: Clock, notifier: Notifier) -> None:
         handles_to_notify = [declaration.user_handle for declaration in self._declarations if declaration.is_positive]
         if self._is_pending(clock):
-            message = create_message_for_event_start_notification(self._name, str(self._code))
-            notifier.notify(message, handles_to_notify)
+            notifier.notify_event_start(self._name, str(self._code), handles_to_notify)
             self.remove()
         elif self._is_to_remind(clock):
-            self._remind(handles_to_notify, notifier)
+            notifier.notify_reminder(self._name, str(self._code), self._time, handles_to_notify)
+            self._mark_as_reminded()
 
     def declare_yes(self, user_handle: str) -> None:
         self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.YES))
@@ -164,15 +156,8 @@ class Event:
     def remove(self) -> None:
         self._removed = True
 
-    def _remind(self, handles_to_notify: List[str], notifier: Notifier) -> None:
-        message = create_message_for_event_reminder_notification(self._name, str(self._code), self._time)
-        notifier.notify(message, handles_to_notify)
+    def _mark_as_reminded(self) -> None:
         self._reminded = True
-
-    def _dispose(self, handles_to_notify: List[str], notifier: Notifier) -> None:
-        message = create_message_for_event_start_notification(self._name, str(self._code))
-        notifier.notify(message, handles_to_notify)
-        self.remove()
 
     def _is_user_owner(self, user_handle: str) -> bool:
         return user_handle == self._owner_handle
@@ -188,10 +173,16 @@ class Event:
 
 @dataclass
 class Declaration:
+    id: UUID
     event_id: UUID
     user_handle: str
     decision: Decision
-    id: UUID = uuid4()
+
+    def __init__(self, event_id: UUID, user_handle: str, decision: Decision):
+        self.id = uuid4()
+        self.event_id = event_id
+        self.user_handle = user_handle
+        self.decision = decision
 
     @property
     def is_positive(self):

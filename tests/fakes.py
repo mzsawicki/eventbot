@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Generator, List
+from typing import Generator, List, Optional
 
 from eventbot.domain import Clock, EventSequenceGenerator, Notifier
 
@@ -23,16 +23,24 @@ class FakeSequenceGenerator(EventSequenceGenerator):
         self._current_value: int = 0
 
     def __call__(self) -> Generator[int, None, None]:
-        yield self._current_value
         self._current_value += 1
+        yield self._current_value
 
 
 class FakeNotifier(Notifier):
     def __init__(self):
         self._notified_handles: List[str] = []
 
-    def notify(self, message: str, user_handles: List[str]) -> None:
+    def notify_event_start(self, event_name: str, event_code: str, user_handles: List[str]) -> None:
         self._notified_handles = user_handles
+
+    def notify_reminder(self, event_name: str, event_code: str, start_time: datetime,
+                        user_handles: List[str]) -> None:
+        self._notified_handles = user_handles
+
+    def notify_event_created(self, event_name: str, event_code: str, time: datetime, owner: str,
+                             reminder_time: Optional[datetime] = None) -> None:
+        self._notified_handles = [owner, ]
 
     def clear(self) -> None:
         self._notified_handles = []

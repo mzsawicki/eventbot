@@ -1,6 +1,7 @@
 import abc
 
-from eventbot.application.repositories import CalendarRepository
+from eventbot.domain.repositories import CalendarRepository
+from eventbot.domain.ports import EventSequenceGenerator
 
 
 class CalendarUnitOfWork(metaclass=abc.ABCMeta):
@@ -15,6 +16,11 @@ class CalendarUnitOfWork(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def calendars(self) -> CalendarRepository:
+        raise NotImplemented
+
+    @property
+    @abc.abstractmethod
+    def event_sequence_generator(self) -> EventSequenceGenerator:
         raise NotImplemented
 
     @abc.abstractmethod

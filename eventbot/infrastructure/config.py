@@ -2,6 +2,15 @@ import os
 import pathlib
 from dataclasses import dataclass
 
+from eventbot.domain import CalendarLanguage
+
+
+def read_calendar_language(language: str) -> CalendarLanguage:
+    if language == 'pl':
+        return CalendarLanguage.PL
+    else:
+        raise ValueError(f'Unknown language set in config: {language}')
+
 
 @dataclass(frozen=True)
 class Config:
@@ -18,3 +27,6 @@ class Config:
 
     # Discord
     token = os.getenv('DISCORD_TOKEN')
+
+    # Language
+    language = read_calendar_language(os.getenv('LANGUAGE'))
