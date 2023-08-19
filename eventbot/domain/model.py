@@ -137,13 +137,22 @@ class Event:
             self._mark_as_reminded()
 
     def declare_yes(self, user_handle: str) -> None:
-        self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.YES))
+        if existing_declaration := self._get_existing_declaration(user_handle):
+            existing_declaration.decision = Decision.YES
+        else:
+            self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.YES))
 
     def declare_no(self, user_handle: str) -> None:
-        self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.NO))
+        if existing_declaration := self._get_existing_declaration(user_handle):
+            existing_declaration.decision = Decision.NO
+        else:
+            self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.NO))
 
     def declare_maybe(self, user_handle: str) -> None:
-        self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.MAYBE))
+        if existing_declaration := self._get_existing_declaration(user_handle):
+            existing_declaration.decision = Decision.MAYBE
+        else:
+            self._declarations.append(Declaration(event_id=self._id, user_handle=user_handle, decision=Decision.MAYBE))
 
     def ensure_user_can_delete(self, user_handle: str) -> None:
         if not self._is_user_owner(user_handle):
@@ -169,6 +178,12 @@ class Event:
         if not self._remind_at or self._reminded:
             return False
         return clock.now() >= self._remind_at
+
+    def _get_existing_declaration(self, user_handle: str) -> Optional['Declaration']:
+        return next(
+            (declaration for declaration in self._declarations if declaration.user_handle == user_handle),
+            None
+        )
 
 
 @dataclass
