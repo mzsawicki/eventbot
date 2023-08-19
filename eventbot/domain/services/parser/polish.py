@@ -361,7 +361,7 @@ def parse_pattern_weekday_next_week(now: datetime, tokens: List[Token]) -> date:
     days_delta = week_day_number - now.weekday()
     if days_delta <= 0:
         days_delta += 7
-    if grabber.word == 'next':
+    elif grabber.word == 'next':
         days_delta += 7
     return now + timedelta(days=days_delta)
 
@@ -708,6 +708,7 @@ class PolishParser(Parser):
         'kolejnym': 'next',
         'kolejną': 'next',
         'dzisiaj': 'this day',
+        'dziś': 'this day',
         'jutro': 'next day',
         'pojutrze': 'day after next day',
         'za tydzien': 'next week',

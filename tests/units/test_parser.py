@@ -123,3 +123,21 @@ def test_parsing_reminder_single_unit():
     parser = PolishParser(FakeClock(datetime(2023, 8, 10)))
     result = parser('Wydarzenie jutro o drugiej po południu. Przypomnij mi godzinę wcześniej')
     assert result.reminder_delta == timedelta(hours=1) and result.time == datetime(2023, 8, 11, 14)
+
+
+def test_parsing_pattern_today():
+    parser = PolishParser(FakeClock(datetime(2023, 8, 10, 12)))
+    result = parser('Konferencja dziś o 20')
+    assert result.time == datetime(2023, 8, 10, 20)
+
+
+def test_parsing_pattern_today_implicit():
+    parser = PolishParser(FakeClock(datetime(2023, 8, 10, 12)))
+    result = parser('Spotkanie o 20')
+    assert result.time == datetime(2023, 8, 10, 20)
+
+
+def test_parsing_pattern_next_weekday_same_weekday():
+    parser = PolishParser(FakeClock(datetime(2023, 8, 19, 19)))
+    result = parser('Gierki w następną sobotę o 21')
+    assert result.time == datetime(2023, 8, 26, 21)
