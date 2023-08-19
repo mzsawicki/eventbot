@@ -32,3 +32,18 @@ Then, you can run the bot:
 chmod +x run.sh
 ./run.sh
 ```
+
+## Bot commands
+Event bot supports following slash commands:
+```
+/event new
+```
+Opens modal allowing to create a new event at current channel
+```
+/event list
+```
+Responds with a list of upcoming events for current channel
+```
+/event remove <event_code>
+```
+Removes user's selected event. `event_code` is given on creation and displayed on its message.
