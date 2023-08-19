@@ -7,6 +7,7 @@ class StringType(Enum):
     EVENT_START_MESSAGE = 'start'
     EVENT_REMINDER_MESSAGE = 'reminder'
     EVENT_CREATED_MESSAGE = 'created'
+    EVENT_REMOVED_MESSAGE = 'removed'
     MODAL_TITLE = 'modal_title'
     MODAL_EVENT_NAME_LABEL = 'modal_event_name_label'
     MODAL_EVENT_TIME_LABEL = 'modal_event_time_label'
@@ -34,6 +35,7 @@ STRINGS = {
                                           'Zainteresowane osoby zostaną powiadomione: {reminder_time}\n'
                                           'Kod wydarzenia: {event_code}\n'
                                           'Dodane przez: {owner}',
+        StringType.EVENT_REMOVED_MESSAGE: 'Wydarzenie {event_code} zostało usunięte.',
 
         StringType.MODAL_TITLE: 'Nowe wydarzenie',
         StringType.MODAL_EVENT_NAME_LABEL: 'Tytuł',
@@ -50,7 +52,7 @@ STRINGS = {
         StringType.BUTTON_MAYBE_LABEL: 'Być może',
         StringType.DECISION_YES_MESSAGE: '{user} weźmie udział!',
         StringType.DECISION_NO_MESSAGE: '{user} nie wieźmie udziału :(',
-        StringType.DECISION_MAYBE_MESSAGE: '{user} jeszcze się zastanawia...'
+        StringType.DECISION_MAYBE_MESSAGE: '{user} jeszcze się zastanawia...',
 
     }
 }

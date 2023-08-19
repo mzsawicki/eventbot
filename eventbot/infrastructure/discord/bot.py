@@ -61,11 +61,21 @@ def run_bot(token: str, uow: CalendarUnitOfWork, clock: Clock, config: Config = 
         await interaction.response.send_modal(modal)
 
     @events.subcommand('list', description=STRINGS[config.language][StringType.COMMAND_LIST_DESCRIPTION])
-    async def list_events(interaction: nextcord.Interaction,):
+    async def list_events(interaction: nextcord.Interaction):
         with uow:
             incoming_events = uow.calendars.get_incoming_events(interaction.guild.name, interaction.channel.name)
             message = '\n'.join([format_event(event) for event in incoming_events])
             await interaction.response.send_message(message)
+
+    @events.subcommand('remove', description=STRINGS[config.language][StringType.COMMAND_REMOVE_DESCRIPTION])
+    async def remove_event(interaction: nextcord.Interaction, event_code: str = nextcord.SlashOption(name='code')):
+        with uow:
+            calendar = uow.calendars.get_calendar_by_guild_and_channel(interaction.guild.name, interaction.channel.name)
+            calendar.delete_event(interaction.user.mention, event_code)
+            uow.calendars.add_calendar(calendar)
+            uow.commit()
+        message = STRINGS[config.language][StringType.EVENT_REMOVED_MESSAGE].format(event_code=event_code)
+        await interaction.response.send_message(message)
 
     bot.add_cog(cog)
     bot.run(token)
