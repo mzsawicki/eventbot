@@ -18,7 +18,7 @@ pip install -r requirements.txt
 
 Start the database; you can use provided docker-compose file:
 ```shell
-docker-compose up db -d
+docker-compose -d up db
 ```
 
 Prepare the database schema with the bootstrap script (note this will purge the existing schema):
