@@ -126,13 +126,19 @@ def test_parsing_reminder_single_unit():
 
 
 def test_parsing_pattern_today():
-    parser = PolishParser(FakeClock(datetime(2023, 8, 10, 12)))
+    parser = PolishParser(FakeClock(datetime(2023, 8, 20, 16)))
     result = parser('Konferencja dziś o 20')
-    assert result.time == datetime(2023, 8, 10, 20)
+    assert result.time == datetime(2023, 8, 20, 20)
+
+
+def test_parsing_pattern_today_different():
+    parser = PolishParser(FakeClock(datetime(2023, 8, 20, 16)))
+    result = parser('Konferencja dzisiaj o 20')
+    assert result.time == datetime(2023, 8, 20, 20)
 
 
 def test_parsing_pattern_today_implicit():
-    parser = PolishParser(FakeClock(datetime(2023, 8, 10, 12)))
+    parser = PolishParser(FakeClock(datetime(2023, 8, 10, 16)))
     result = parser('Spotkanie o 20')
     assert result.time == datetime(2023, 8, 10, 20)
 

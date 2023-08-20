@@ -193,8 +193,8 @@ PATTERN_TIME_AMPM_SCALAR_TWO_DIGIT_MINUTES = [Tag.SCALAR_HOUR, Tag.SCALAR_MINUTE
 PATTERN_TIME_AMPM_ORDINAL_TWO_DIGIT_MINUTES = [Tag.ORDINAL_HOUR, Tag.SCALAR_MINUTE,
                                                Tag.SCALAR_MINUTE, Tag.REPEATER_DAY_PORTION]
 
-PATTERN_DATE_NEXT_DAY = [Tag.GRABBER, Tag.REPEATER_DAY]
-PATTERN_DATE_DAY_AFTER_NEXT_DAY = [Tag.REPEATER_DAY, Tag.POINTER, Tag.GRABBER, Tag.REPEATER_DAY]
+PATTERN_DATE_GRABBER_DAY = [Tag.GRABBER, Tag.REPEATER_DAY]
+PATTERN_DATE_DAY_AFTER_GRABBER_DAY = [Tag.REPEATER_DAY, Tag.POINTER, Tag.GRABBER, Tag.REPEATER_DAY]
 PATTERN_DATE_NEXT_WEEK = [Tag.SEPARATOR, Tag.REPEATER_WEEK]
 PATTERN_DATE_SCALAR_FULL = [Tag.SCALAR_DAY, Tag.SCALAR_MONTH, Tag.SCALAR_YEAR]
 PATTERN_DATE_SCALAR_FULL_REVERSE = [Tag.SCALAR_YEAR, Tag.SCALAR_MONTH, Tag.SCALAR_DAY]
@@ -233,7 +233,7 @@ UNEQUIVOCAL_TIME_PATTERNS = {
 }
 
 UNEQUIVOCAL_DATE_PATTERNS = {
-    'day-after-next-day': PATTERN_DATE_DAY_AFTER_NEXT_DAY,
+    'day-after-grabber-day': PATTERN_DATE_DAY_AFTER_GRABBER_DAY,
     'scalar-full': PATTERN_DATE_SCALAR_FULL,
     'scalar-full-reverse': PATTERN_DATE_SCALAR_FULL_REVERSE,
     'month-name-full': PATTERN_DATE_MONTH_NAME_FULL,
@@ -245,7 +245,7 @@ UNEQUIVOCAL_DATE_PATTERNS = {
 }
 
 AMBIGUOUS_DATE_PATTERNS = {
-    'next-day': PATTERN_DATE_NEXT_DAY,
+    'grabber-day': PATTERN_DATE_GRABBER_DAY,
     'scalar': PATTERN_DATE_SCALAR,
     'ordinal': PATTERN_DATE_ORDINAL,
     'week-day': PATTERN_WEEK_DAY,
@@ -304,8 +304,12 @@ def parse_pattern_24_scalar_two_digit_minutes(now: datetime, tokens: List[Token]
     return timedelta(hours=hour, minutes=minutes)
 
 
-def parse_pattern_date_next_day(now: datetime, tokens: List[Token]) -> date:
-    return date(year=now.year, month=now.month, day=now.day) + timedelta(days=1)
+def parse_pattern_date_grabber_day(now: datetime, tokens: List[Token]) -> date:
+    date_ = now.date()
+    grabber, _ = tokens
+    if grabber.word == GRABBER_NEXT:
+        date_ += timedelta(days=1)
+    return date_
 
 
 def parse_pattern_date_next_week(now: datetime, tokens: List[Token]) -> date:
@@ -322,7 +326,7 @@ def parse_pattern_date_scalar_reverse(now: datetime, tokens: List[Token]) -> dat
     return date(year=int(year.word), month=int(month.word), day=int(day.word))
 
 
-def parse_pattern_date_day_after_next_day(now: datetime, tokens: List[Token]) -> date:
+def parse_pattern_date_day_after_grabber_day(now: datetime, tokens: List[Token]) -> date:
     _, pointer, grabber, _ = tokens
     days = 0
     if pointer.word == POINTER_FUTURE:
@@ -446,9 +450,9 @@ HANDLERS = {
     '24-single-ordinal': parse_pattern_24_single_scalar,
     '24-scalar-two-digit-minutes': parse_pattern_24_scalar_two_digit_minutes,
     '24-ordinal-two-digit-minutes': parse_pattern_24_scalar_two_digit_minutes,
-    'next-day': parse_pattern_date_next_day,
+    'grabber-day': parse_pattern_date_grabber_day,
     'next-week': parse_pattern_date_next_week,
-    'day-after-next-day': parse_pattern_date_day_after_next_day,
+    'day-after-grabber-day': parse_pattern_date_day_after_grabber_day,
     'scalar-full': parse_pattern_date_scalar_full,
     'ordinal-full': parse_pattern_date_scalar_full,
     'scalar-full-reverse': parse_pattern_date_scalar_reverse,
@@ -708,7 +712,7 @@ class PolishParser(Parser):
         'kolejnym': 'next',
         'kolejną': 'next',
         'dzisiaj': 'this day',
-        'dziś': 'this day',
+        'dzis': 'this day',
         'jutro': 'next day',
         'pojutrze': 'day after next day',
         'za tydzien': 'next week',
